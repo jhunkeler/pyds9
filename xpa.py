@@ -22,10 +22,33 @@ def _find_shlib(_libbase):
         _fname = os.path.join(_dir, _libname)
         if os.path.exists(_fname):
             return _fname
+
     # try current directory
     _fname = os.path.join('./xpa', _libname)
     if os.path.exists(_fname):
         return _fname
+
+    # Search relative to the interpreter, then relative to the xpa module
+    dirs_ = [
+        os.path.join(sys.prefix, 'lib'),
+        os.path.join(sys.prefix, 'lib64'),
+        os.path.dirname(__file__)
+    ]
+    pattern = 'lib' + _libbase + '*'
+    libxpa = []
+
+    for d in dirs_:
+        libxpa.append(glob.glob(os.path.join(d, pattern)))
+
+    if libxpa:
+        # Flatten search results, and return first match
+        # (Ignores static archives)
+        libxpa = [x for y in libxpa
+                  for x in y if not x.endswith('.a')
+                  or not x.endswith('.lib')]
+        if libxpa:
+            return libxpa[0]
+
     return None
 
 _libpath = _find_shlib('xpa')
